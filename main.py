@@ -1,12 +1,11 @@
 from fastapi import FastAPI, Query
-from fastapi.responses import JSONResponse
-from bs4 import BeautifulSoup
+from fastapi.responses import PlainTextResponse
 import requests
 import urllib.parse
 
 app = FastAPI()
 
-def google_search(query: str, num_results=10):
+def fetch_google_html(query: str, num_results=10):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                       "(KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
@@ -16,22 +15,9 @@ def google_search(query: str, num_results=10):
     url = f"https://www.google.com/search?q={encoded_query}&num={num_results}"
 
     response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        return {"error": f"Google search failed with status code {response.status_code}"}
+    return response.text, response.status_code
 
-    soup = BeautifulSoup(response.text, 'html.parser')
-    results = []
-
-    for g in soup.find_all('div', class_='tF2Cxc'):
-        link_tag = g.find('a')
-        if link_tag:
-            title = link_tag.text
-            link = link_tag['href']
-            results.append({"title": title, "link": link})
-
-    return results
-
-@app.get("/search")
+@app.get("/search", response_class=PlainTextResponse)
 def search(q: str = Query(..., description="Search query string")):
-    results = google_search(q)
-    return JSONResponse(content={"results": results})
+    html, status_code = fetch_google_html(q)
+    return PlainTextResponse(content=html, status_code=status_code)
