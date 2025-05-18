@@ -1,34 +1,18 @@
+# Use official Python base image
 FROM python:3.11-slim
 
-# Install dependencies needed for Chrome/puppeteer
-RUN apt-get update && apt-get install -y \
-    wget \
-    ca-certificates \
-    fonts-liberation \
-    libasound2 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libgconf-2-4 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    xdg-utils \
-    --no-install-recommends && rm -rf /var/lib/apt/lists/*
-
+# Set working directory
 WORKDIR /app
 
-COPY requirements.txt .
+# Copy required files
+COPY main.py /app/
+COPY requirements.txt /app/
 
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Expose FastAPI port
+EXPOSE 8000
 
-# Pre-download Chromium for pyppeteer (optional but recommended)
-RUN python -m pyppeteer install
-
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start the FastAPI server
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
